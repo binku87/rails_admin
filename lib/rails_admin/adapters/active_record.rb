@@ -26,7 +26,7 @@ module RailsAdmin
       end
 
       def all(options = {}, scope = nil)
-        scope ||= self.scoped
+        scope ||= scoped
         scope = scope.includes(options[:include]) if options[:include]
         scope = scope.limit(options[:limit]) if options[:limit]
         scope = scope.where(primary_key => options[:bulk_ids]) if options[:bulk_ids]
@@ -40,7 +40,7 @@ module RailsAdmin
       end
 
       def count(options = {}, scope = nil)
-        all(options.merge({:limit => false, :page => false}), scope).count
+        all(options.merge(:limit => false, :page => false), scope).count
       end
 
       def destroy(objects)
@@ -48,7 +48,7 @@ module RailsAdmin
       end
 
       def associations
-        model.reflect_on_all_associations.map do |association|
+        model.reflect_on_all_associations.collect do |association|
           Association.new(association, model).to_options_hash
         end
       end
@@ -57,9 +57,9 @@ module RailsAdmin
         columns = model.columns.reject do |c|
           c.type.blank? ||
             DISABLED_COLUMN_TYPES.include?(c.type.to_sym) ||
-            DISABLED_COLUMN_MATCHERS.any? {|matcher| matcher.match(c.type.to_s)}
+            DISABLED_COLUMN_MATCHERS.any? { |matcher| matcher.match(c.type.to_s) }
         end
-        columns.map do |property|
+        columns.collect do |property|
           {
             :name => property.name.to_sym,
             :pretty_name => property.name.to_s.tr('_', ' ').capitalize,
@@ -88,10 +88,9 @@ module RailsAdmin
         true
       end
 
-      private
+    private
 
       class WhereBuilder
-
         def initialize(scope)
           @statements = []
           @values = []
@@ -130,7 +129,7 @@ module RailsAdmin
         filters.each_pair do |field_name, filters_dump|
           filters_dump.each do |_, filter_dump|
             wb = WhereBuilder.new(scope)
-            wb.add(fields.find{|f| f.name.to_s == field_name}, filter_dump[:v], (filter_dump[:o] || 'default'))
+            wb.add(fields.detect { |f| f.name.to_s == field_name }, filter_dump[:v], (filter_dump[:o] || 'default'))
             # AND current filter statements to other filter statements
             scope = wb.build
           end
@@ -163,8 +162,8 @@ module RailsAdmin
             :name => name.to_sym,
             :pretty_name => display_name,
             :type => macro,
-            :model_proc => Proc.new { model_lookup },
-            :primary_key_proc => Proc.new { primary_key_lookup },
+            :model_proc => proc { model_lookup },
+            :primary_key_proc => proc { primary_key_lookup },
             :foreign_key => foreign_key.to_sym,
             :foreign_type => foreign_type_lookup,
             :as => as_lookup,
@@ -175,7 +174,7 @@ module RailsAdmin
           }
         end
 
-        private
+      private
         def model_lookup
           if options[:polymorphic]
             polymorphic_parents(:active_record, model_name.to_s, name) || []
@@ -223,7 +222,7 @@ module RailsAdmin
       end
 
       class StatementBuilder < RailsAdmin::AbstractModel::StatementBuilder
-        protected
+      protected
 
         def unary_operators
           {
@@ -236,7 +235,7 @@ module RailsAdmin
           }
         end
 
-        private
+      private
 
         def range_filter(min, max)
           if min && max
@@ -299,7 +298,7 @@ module RailsAdmin
         end
 
         def like_operator
-          ar_adapter == "postgresql" ? 'ILIKE' : 'LIKE'
+          ar_adapter == 'postgresql' ? 'ILIKE' : 'LIKE'
         end
       end
     end

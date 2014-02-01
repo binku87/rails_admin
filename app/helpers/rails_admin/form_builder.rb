@@ -4,14 +4,14 @@ module RailsAdmin
 
     def generate(options = {})
       without_field_error_proc_added_div do
-        options.reverse_merge!({
+        options.reverse_merge!(
           :action => @template.controller.params[:action],
           :model_config => @template.instance_variable_get(:@model_config),
           :nested_in => false
-        })
+        )
 
         object_infos +
-        visible_groups(options[:model_config], generator_action(options[:action], options[:nested_in])).map do |fieldset|
+        visible_groups(options[:model_config], generator_action(options[:action], options[:nested_in])).collect do |fieldset|
           fieldset_for fieldset, options[:nested_in]
         end.join.html_safe +
         (options[:nested_in] ? '' : @template.render(:partial => 'rails_admin/main/submit_buttons'))
@@ -24,7 +24,7 @@ module RailsAdmin
           contents = []
           contents << @template.content_tag(:legend, %{<i class="icon-chevron-#{(fieldset.active? ? 'down' : 'right')}"></i> #{fieldset.label}}.html_safe, :style => "#{fieldset.name == :default ? 'display:none' : ''}")
           contents << @template.content_tag(:p, fieldset.help) if fieldset.help.present?
-          contents << fields.map{ |field| field_wrapper_for(field, nested_in) }.join
+          contents << fields.collect { |field| field_wrapper_for(field, nested_in) }.join
           contents.join.html_safe
         end
       end
@@ -77,17 +77,17 @@ module RailsAdmin
       else
         object.send(model_config.object_label_method).presence || "#{model_config.label} ##{object.id}"
       end
-      %{<span style="display:none" class="object-infos" data-model-label="#{model_label}" data-object-label="#{CGI::escapeHTML(object_label)}"></span>}.html_safe
+      %{<span style="display:none" class="object-infos" data-model-label="#{model_label}" data-object-label="#{CGI.escapeHTML(object_label)}"></span>}.html_safe
     end
 
-    def jquery_namespace field
+    def jquery_namespace(field)
       %{#{'#modal ' if @template.controller.params[:modal]}##{dom_id(field)}_field}
     end
 
     def dom_id(field)
       (@dom_id ||= {})[field.name] ||=
         [
-          @object_name.to_s.gsub(/\]\[|[^-a-zA-Z0-9:.]/, "_").sub(/_$/, ""),
+          @object_name.to_s.gsub(/\]\[|[^-a-zA-Z0-9:.]/, '_').sub(/_$/, ''),
           options[:index],
           field.method_name
         ].reject(&:blank?).join('_')
@@ -97,7 +97,7 @@ module RailsAdmin
       (@dom_name ||= {})[field.name] ||= %{#{@object_name}#{options[:index] && "[#{options[:index]}]"}[#{field.method_name}]#{field.is_a?(Config::Fields::Association) && field.multiple? ? '[]' : ''}}
     end
 
-    protected
+  protected
     def generator_action(action, nested)
       if nested
         action = :nested
@@ -120,7 +120,7 @@ module RailsAdmin
     def without_field_error_proc_added_div
       default_field_error_proc = ::ActionView::Base.field_error_proc
       begin
-        ::ActionView::Base.field_error_proc = Proc.new { |html_tag, instance| html_tag }
+        ::ActionView::Base.field_error_proc = proc { |html_tag, instance| html_tag }
         yield
       ensure
         ::ActionView::Base.field_error_proc = default_field_error_proc

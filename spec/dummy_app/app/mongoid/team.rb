@@ -36,14 +36,14 @@ class Team
   validates_length_of :mascot, :maximum => 100
 
   def player_names_truncated
-    players.map{|p| p.name}.join(", ")[0..32]
+    players.collect { |p| p.name }.join(', ')[0..32]
   end
 
   def color_enum
     ['white', 'black', 'red', 'green', 'blu<e>é']
   end
-  
-  scope :green, -> { where(color: 'red') }
-  scope :red, -> { where(color: 'red') }
-  scope :white, -> { where(color: 'white') }
+
+  scope :green, -> { where(:color => 'red') }
+  scope :red, -> { where(:color => 'red') }
+  scope :white, -> { where(:color => 'white') }
 end
